@@ -40,10 +40,10 @@ body.touch {
                 &:before {
                     content: $glyph-icon-arrow-down;
                     left: 50%;
-                    @include transform(translateX(-50%) rotate(-90deg));
+                    transform: translateX(-50%) rotate(-90deg);
                 }
                 &.expanded:before {
-                    @include transform(translateX(-50%) rotate(0deg));
+                    transform: translateX(-50%) rotate(0deg);
                 }
             }
 		}

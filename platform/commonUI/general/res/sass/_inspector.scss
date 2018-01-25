@@ -78,7 +78,7 @@
                 }
             }
             .form-row {
-                @include align-items(center);
+                align-items: center;
                 border: none !important;
                 margin-bottom: 0 !important;
                 padding: $interiorMarginSm 0;
