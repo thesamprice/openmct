@@ -40,6 +40,13 @@ define(
             this.space = space;
             this.spaces = space ? [space] : [];
             this.localStorage = $window.localStorage;
+
+            fetch('/getData').then(function(resp) {
+                resp.json().then(function(j){
+                    this.localStorage = j;
+                })
+            })
+
         }
 
         /**
@@ -48,6 +55,14 @@ define(
          */
         LocalStoragePersistenceProvider.prototype.setValue = function (key, value) {
             this.localStorage[key] = JSON.stringify(value);
+
+            fetch('/saveData', {
+                method: 'POST', // or 'PUT'
+                body: JSON.stringify(this.localStorage), 
+                headers: new Headers({
+                  'Content-Type': 'application/json'
+                })
+            })
         };
 
         /**
