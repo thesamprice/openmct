@@ -121,7 +121,8 @@ export default {
       timestampKey: undefined,
       valueKey: null,
       composition: [],
-      unit: ''
+      unit: '',
+      unsubscribeRealtime: undefined
     };
   },
   computed: {
@@ -231,14 +232,23 @@ export default {
 
     this.valueKey = this.valueMetadata ? this.valueMetadata.key : undefined;
 
-    this.telemetryCollection = this.openmct.telemetry.requestCollection(this.domainObject, {
-      size: 1,
-      strategy: 'latest',
-      timeContext: this.timeContext
-    });
-    this.telemetryCollection.on('add', this.setLatestValues);
-    this.telemetryCollection.on('clear', this.resetValues);
-    this.telemetryCollection.load();
+    this.openmct.telemetry
+      .request(this.domainObject, {
+        size: 1,
+        strategy: 'latest',
+        timeContext: this.timeContext
+      })
+      .then((data) => {
+        this.setLatestValues(data);
+      })
+      .catch(() => {
+        // Ignore initial latest failures; realtime will populate once data flows.
+      });
+
+    this.unsubscribeRealtime = this.openmct.telemetry.subscribe(
+      this.domainObject,
+      this.setLatestValues
+    );
 
     if (this.hasUnits) {
       this.setUnit();
@@ -248,10 +258,10 @@ export default {
   },
   unmounted() {
     this.openmct.time.off('timeSystem', this.updateTimeSystem);
-    this.telemetryCollection.off('add', this.setLatestValues);
-    this.telemetryCollection.off('clear', this.resetValues);
-
-    this.telemetryCollection.destroy();
+    if (typeof this.unsubscribeRealtime === 'function') {
+      this.unsubscribeRealtime();
+      this.unsubscribeRealtime = undefined;
+    }
   },
   methods: {
     updateView() {
@@ -278,7 +288,16 @@ export default {
       }
     },
     setLatestValues(data) {
-      this.latestDatum = data[data.length - 1];
+      if (Array.isArray(data)) {
+        if (data.length === 0) {
+          return;
+        }
+        this.latestDatum = data[data.length - 1];
+      } else if (data) {
+        this.latestDatum = data;
+      } else {
+        return;
+      }
       this.updateView();
     },
     updateTimeSystem(timeSystem) {

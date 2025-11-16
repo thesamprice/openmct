@@ -78,7 +78,15 @@ describe('The LAD Table', () => {
     parent.appendChild(child);
 
     openmct.router.isNavigatedObject = jasmine.createSpy().and.returnValue(false);
-    spyOn(openmct.telemetry, 'request').and.returnValue(Promise.resolve([]));
+    spyOn(openmct.telemetry, 'request').and.callFake((domainObject, options) => {
+      const provider = openmct.telemetry.findRequestProvider(domainObject, options);
+      if (provider && typeof provider.request === 'function') {
+        return provider.request(domainObject, options);
+      }
+
+      return Promise.resolve([]);
+    });
+    spyOn(openmct.telemetry, 'subscribe').and.returnValue(() => {});
 
     ladPlugin = new LadPlugin();
     openmct.install(ladPlugin);
